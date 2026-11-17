@@ -184,10 +184,62 @@ class ApiIntegrationTests(unittest.TestCase):
 
     def test_comparison_handles_malformed_model_json(self):
         ids = [self.upload(), self.upload()]
+        for pid in ids:
+            self.client.patch(f"/api/papers/{pid}/domain", json={"domain": "computing"}, headers=self.headers)
         with patch.object(self.llm, "_raw_generate", return_value=SimpleNamespace(text="[]")):
             response = self.client.post("/api/compare", json={"paper_ids": ids}, headers=self.headers)
         self.assertEqual(response.status_code, 200, response.text)
         self.assertEqual(response.json()["papers"][0]["dataset"], "Not specified in available evidence")
+
+    def test_domains_are_owned_validated_and_persisted(self):
+        pid = self.upload()
+        endpoint = f"/api/papers/{pid}/domain"
+        self.assertEqual(self.client.patch(endpoint, json={"domain": "medicine"}, headers=self.other_headers).status_code, 404)
+        self.assertEqual(self.client.patch(endpoint, json={"domain": "invented"}, headers=self.headers).status_code, 422)
+        self.assertEqual(self.client.patch(endpoint, json={}, headers=self.headers).status_code, 422)
+        self.assertEqual(self.client.patch(endpoint, json={"domain": "medicine"}, headers=self.headers).json()["domain"], "medicine")
+        self.assertEqual(self.client.get("/api/papers", headers=self.headers).json()[0]["domain"], "medicine")
+        self.assertIsNone(self.client.patch(endpoint, json={"domain": None}, headers=self.headers).json()["domain"])
+
+    def test_comparison_blocks_unassigned_and_cross_domain_before_ai(self):
+        ids = [self.upload(), self.upload()]
+        comparison = importlib.import_module("app.routers.comparison")
+        with patch.object(comparison, "get_paper_summary") as summary:
+            self.assertEqual(self.client.post("/api/compare", json={"paper_ids": ids}, headers=self.headers).status_code, 409)
+            for pid, domain in zip(ids, ["medicine", "agriculture"]):
+                self.client.patch(f"/api/papers/{pid}/domain", json={"domain": domain}, headers=self.headers)
+            self.assertEqual(self.client.post("/api/compare", json={"paper_ids": ids}, headers=self.headers).status_code, 400)
+            summary.assert_not_called()
+            self.client.patch(f"/api/papers/{ids[1]}/domain", json={"domain": "medicine"}, headers=self.headers)
+            summary.return_value = {key: "Fixture" for key in ("methodology", "dataset", "key_findings", "limitations", "future_work")}
+            response = self.client.post("/api/compare", json={"paper_ids": ids[::-1]}, headers=self.headers)
+            self.assertEqual(response.status_code, 200, response.text)
+            self.assertEqual([p["paper_id"] for p in response.json()["papers"]], ids[::-1])
+
+    def test_pdf_is_original_inline_and_owner_only(self):
+        pid = self.upload()
+        endpoint = f"/api/papers/{pid}/pdf"
+        self.assertEqual(self.client.get(endpoint).status_code, 401)
+        self.assertEqual(self.client.get(endpoint, headers=self.other_headers).status_code, 404)
+        response = self.client.get(endpoint, headers=self.headers)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.headers["content-type"], "application/pdf")
+        self.assertTrue(response.headers["content-disposition"].startswith("inline"))
+        self.assertIn("no-store", response.headers["cache-control"])
+        with self.db_module.SessionLocal() as db:
+            path = Path(db.get(self.Paper, pid).file_path)
+        self.assertEqual(response.content, path.read_bytes())
+        path.unlink()
+        self.assertEqual(self.client.get(endpoint, headers=self.headers).status_code, 404)
+
+    def test_pdf_rejects_path_outside_uploads(self):
+        pid = self.upload()
+        outside = self.directory / "outside.pdf"
+        outside.write_bytes(b"%PDF-private")
+        with self.db_module.SessionLocal() as db:
+            db.get(self.Paper, pid).file_path = str(outside)
+            db.commit()
+        self.assertEqual(self.client.get(f"/api/papers/{pid}/pdf", headers=self.headers).status_code, 404)
 
     def test_research_graph_triages_and_handles_no_gaps(self):
         ids = [self.upload(), self.upload()]

@@ -53,6 +53,34 @@ Then start the backend and frontend with the commands above.
 
 ## Final-review validation
 
+### Paper library and same-domain comparison
+
+My Papers, Compare, Research gaps and Research workflow now use searchable card
+grids with title/filename search, domain filters, sorting and 12-paper pages.
+Selections remain visible across filters and pages (up to five papers).
+
+Assign the primary application domain using the dropdown on each My Papers card.
+These labels are user-assigned, not an automatic scientific domain classifier.
+For interdisciplinary work, use the application's main research area consistently
+(for example medical imaging belongs to Medicine & healthcare even if it uses AI).
+Comparison requires 2–5 ready papers with the same assigned domain; the backend
+rejects missing or mixed domains before summary generation. Matching broad domain
+labels does not guarantee that two papers answer the same research question.
+
+Existing papers start with an unassigned domain. On backend startup, the upgrade
+adds a nullable `papers.domain` column without changing paper text, files, IDs,
+embeddings or evaluation fingerprints. PostgreSQL's existing database role needs
+permission to alter its papers table. No re-upload or reindex is required.
+
+Open PDF shows the stored original in an authenticated in-app reader, with a
+download fallback for browsers without embedded PDF support. The PDF endpoint
+checks ownership and confines file access to the uploads directory; tokens are
+sent as Authorization headers, never placed in the PDF URL. Missing originals
+produce an error instead of opening an unrelated file.
+
+Frontend library helper checks (Node 22.6+):
+`node --experimental-strip-types --test tests/paperLibrary.test.ts` from frontend.
+
 The automated suite uses a temporary SQLite database and fake vector/AI responses.
 It checks authentication, access isolation, PDF upload/deletion, response validation,
 gap verification edge cases, page boundaries and evaluation arithmetic. These are

@@ -9,10 +9,12 @@ import Compare from "./pages/Compare";
 import Gaps from "./pages/Gaps";
 import Research from "./pages/Research";
 import Discover from "./pages/Discover";
+import PaperViewer from "./pages/PaperViewer";
 
 export default function App() {
   return (
     <Routes>
+      <Route path="/papers/:paperId/view" element={<ProtectedRoute><PaperViewer /></ProtectedRoute>} />
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
       <Route

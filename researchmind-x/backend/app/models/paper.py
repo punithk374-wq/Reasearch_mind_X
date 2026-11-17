@@ -18,6 +18,7 @@ class Paper(Base):
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=False)
     title = Column(String(500), nullable=False)
+    domain = Column(String(80), nullable=True)
     filename = Column(String(255), nullable=False)
     file_path = Column(String(500), nullable=False)
     page_count = Column(Integer, default=0)

@@ -35,6 +35,7 @@ export function getApiError(error: unknown, fallback: string): string {
   return fallback;
 }
 export interface Paper {
+    domain: string | null;
     id: number;
     title: string;
     filename: string;

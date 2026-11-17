@@ -7,6 +7,7 @@ from app.models.user import User
 from app.schemas.comparison import CompareRequest, CompareResponse, PaperSummary
 from app.security import get_current_user
 from app.services.extraction_service import get_paper_summary
+from app.paper_domains import DOMAIN_LABELS
 
 router = APIRouter(prefix="/api/compare", tags=["comparison"])
 
@@ -37,6 +38,10 @@ def compare_papers(
         raise HTTPException(status_code=404, detail=f"Papers not found: {sorted(missing)}")
     if any(p.status != "ready" for p in papers):
         raise HTTPException(status_code=409, detail="All selected papers must finish processing successfully")
+    if any(p.domain not in DOMAIN_LABELS for p in papers):
+        raise HTTPException(status_code=409, detail="Assign a research domain to each paper in My Papers before comparing.")
+    if len({p.domain for p in papers}) != 1:
+        raise HTTPException(status_code=400, detail="Comparison requires papers from the same research domain. Update their domains in My Papers if incorrectly assigned.")
 
     # Keep the order the user requested, not the order the DB returned
     by_id = {p.id: p for p in papers}

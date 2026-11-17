@@ -15,9 +15,11 @@ from app.routers import (
     search,
 )
 from app.services.llm_service import DailyQuotaExceeded
+from app.schema_updates import ensure_paper_domain_column
 
 # Creates tables if they don't exist yet. We'll switch to Alembic migrations later.
 Base.metadata.create_all(bind=engine)
+ensure_paper_domain_column(engine)
 
 app = FastAPI(title="ResearchMind X API")
 

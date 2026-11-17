@@ -3,11 +3,12 @@ from pathlib import Path
 
 from fastapi import APIRouter, Depends, File, HTTPException, Response, UploadFile, status
 from sqlalchemy.orm import Session
+from fastapi.responses import FileResponse
 
 from app.database import get_db
 from app.models.paper import Paper
 from app.models.user import User
-from app.schemas.paper import ChunkOut, PaperOut
+from app.schemas.paper import ChunkOut, PaperOut, PaperDomainUpdate
 from app.security import get_current_user
 from app.services.ingest_service import ingest_pdf
 from app.services.vector_store import delete_paper_vectors, index_chunks
@@ -95,6 +96,28 @@ def get_chunks(
 ):
     paper = get_owned_paper(db, paper_id, user)
     return paper.chunks
+
+
+@router.patch("/{paper_id}/domain", response_model=PaperOut)
+def update_domain(paper_id: int, data: PaperDomainUpdate,
+                  db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    paper = get_owned_paper(db, paper_id, user)
+    paper.domain = data.domain
+    db.commit()
+    db.refresh(paper)
+    return paper
+
+
+@router.get("/{paper_id}/pdf")
+def open_pdf(paper_id: int, db: Session = Depends(get_db),
+             user: User = Depends(get_current_user)):
+    paper = get_owned_paper(db, paper_id, user)
+    path = Path(paper.file_path).resolve()
+    if not path.is_relative_to(UPLOAD_DIR.resolve()) or not path.is_file():
+        raise HTTPException(status_code=404, detail="The original PDF is unavailable. Please upload it again.")
+    return FileResponse(path, media_type="application/pdf", filename=paper.filename,
+                        content_disposition_type="inline",
+                        headers={"Cache-Control": "private, no-store", "X-Content-Type-Options": "nosniff"})
 
 
 @router.post("/{paper_id}/reindex", response_model=PaperOut)

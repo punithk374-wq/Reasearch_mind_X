@@ -1,10 +1,16 @@
 from datetime import datetime
 from pydantic import BaseModel
+from app.paper_domains import PaperDomain
+
+
+class PaperDomainUpdate(BaseModel):
+    domain: PaperDomain | None
 
 
 class PaperOut(BaseModel):
     id: int
     title: str
+    domain: str | None = None
     filename: str
     page_count: int
     chunk_count: int

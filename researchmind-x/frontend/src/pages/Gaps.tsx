@@ -3,6 +3,7 @@ import { isAxiosError } from "axios";
 import api from "../api";
 import type { GapResponse, Paper } from "../api";
 import NavBar from "../components/NavBar";
+import PaperPicker from "../components/PaperPicker";
 
 const TYPE_LABELS: Record<string, { label: string; style: string }> = {
   recurring_limitation: {
@@ -70,7 +71,7 @@ export default function Gaps() {
     <div className="min-h-screen bg-slate-900 text-white">
       <NavBar />
 
-      <main className="max-w-4xl mx-auto p-6 space-y-6">
+      <main className="max-w-7xl mx-auto p-6 space-y-6">
         <section>
           <h2 className="text-lg font-semibold mb-1">Research gaps</h2>
           <p className="text-slate-400 text-sm mb-4">
@@ -80,23 +81,7 @@ export default function Gaps() {
             supporting papers.
           </p>
 
-          <div className="flex flex-wrap gap-2 mb-4">
-            {papers.map((p) => (
-              <button
-                key={p.id}
-                onClick={() => toggle(p.id)}
-                disabled={loading || (!selected.includes(p.id) && selected.length >= 5)}
-                className={`text-sm px-3 py-2 rounded-lg border text-left max-w-xs truncate ${
-                  selected.includes(p.id)
-                    ? "bg-emerald-500/20 border-emerald-500 text-emerald-300"
-                    : "bg-slate-800 border-slate-700 hover:border-slate-500"
-                }`}
-                title={p.title}
-              >
-                {p.title}
-              </button>
-            ))}
-          </div>
+          <PaperPicker papers={papers} selected={selected} onToggle={toggle} disabled={loading} />
 
           <button
             onClick={handleFind}
