@@ -2,6 +2,8 @@ import json
 import time
 from app.database import SessionLocal
 from app.models.summary import PaperSummaryCache
+from app.models.paper import Paper
+from app.services.response_validation import normalise_summary
 
 from google.genai import types
 
@@ -71,8 +73,8 @@ def extract_paper_summary(paper_id: int, user_id: int) -> dict:
                     response_mime_type="application/json",
                 ),
             )
-            return json.loads(response.text)
-        except json.JSONDecodeError:
+            return normalise_summary(json.loads(response.text))
+        except (json.JSONDecodeError, TypeError):
             return {
                 "methodology": "Could not parse extraction",
                 "dataset": "Could not parse extraction",
@@ -101,9 +103,17 @@ def get_paper_summary(paper_id: int, user_id: int, force: bool = False) -> dict:
     """Return the stored summary if there is one, otherwise extract and store it."""
     db = SessionLocal()
     try:
+        paper = db.query(Paper).filter_by(id=paper_id, user_id=user_id).first()
+        if not paper or paper.status != "ready":
+            raise ValueError("A ready paper owned by the current user is required")
         row = db.query(PaperSummaryCache).filter_by(paper_id=paper_id).first()
-        if row and not force:
-            return json.loads(row.data)
+        if row and not force and row.model == MODEL:
+            try:
+                cached = normalise_summary(json.loads(row.data))
+            except (json.JSONDecodeError, TypeError):
+                cached = normalise_summary(None)
+            if _is_cacheable(cached):
+                return cached
 
         summary = extract_paper_summary(paper_id, user_id)
 

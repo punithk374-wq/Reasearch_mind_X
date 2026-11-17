@@ -24,6 +24,8 @@ def find_gaps(
         raise HTTPException(status_code=400, detail="Select at least 2 papers to analyse")
     if len(data.paper_ids) > MAX_PAPERS:
         raise HTTPException(status_code=400, detail=f"Analyse at most {MAX_PAPERS} papers at once")
+    if len(set(data.paper_ids)) != len(data.paper_ids):
+        raise HTTPException(status_code=400, detail="Each paper can only be selected once")
 
     papers = (
         db.query(Paper)
@@ -33,6 +35,8 @@ def find_gaps(
     missing = set(data.paper_ids) - {p.id for p in papers}
     if missing:
         raise HTTPException(status_code=404, detail=f"Papers not found: {sorted(missing)}")
+    if any(p.status != "ready" for p in papers):
+        raise HTTPException(status_code=409, detail="All selected papers must finish processing successfully")
 
     by_id = {p.id: p for p in papers}
     ordered = [by_id[pid] for pid in data.paper_ids]

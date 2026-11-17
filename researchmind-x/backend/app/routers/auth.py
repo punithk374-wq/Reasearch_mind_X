@@ -35,7 +35,7 @@ def register(data: UserCreate, db: Session = Depends(get_db)):
 @router.post("/login", response_model=Token)
 def login(form: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     # The OAuth2 form field is named "username"; we treat it as the email
-    user = db.query(User).filter(User.email == form.username.lower()).first()
+    user = db.query(User).filter(User.email == form.username.strip().lower()).first()
     if not user or not verify_password(form.password, user.hashed_password):
         raise HTTPException(status_code=401, detail="Incorrect email or password")
     return Token(access_token=create_access_token(user.id))

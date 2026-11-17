@@ -8,7 +8,7 @@ export interface User {
 }
 
 const api = axios.create({
-  baseURL: "http://localhost:8000",
+  baseURL: import.meta.env.VITE_API_BASE_URL || "http://localhost:8000",
 });
 
 // Attach the saved token to every request
@@ -21,6 +21,19 @@ api.interceptors.request.use((config) => {
 });
 
 export default api;
+
+export function getApiError(error: unknown, fallback: string): string {
+  if (!axios.isAxiosError(error)) return fallback;
+  const detail: unknown = error.response?.data?.detail;
+  if (typeof detail === "string") return detail;
+  if (Array.isArray(detail)) {
+    const messages = detail
+      .filter((item) => item && typeof item === "object" && typeof item.msg === "string")
+      .map((item) => item.msg as string);
+    if (messages.length) return messages.join("; ");
+  }
+  return fallback;
+}
 export interface Paper {
     id: number;
     title: string;

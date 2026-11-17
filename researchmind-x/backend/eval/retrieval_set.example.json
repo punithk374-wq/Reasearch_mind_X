@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "paper_fingerprints": {},
+  "items": [
+    {
+      "id": "Q01",
+      "question": "REPLACE with a question you can answer from your paper text",
+      "answerable": true,
+      "relevant_chunks": [{"paper_id": null, "chunk_id": null}],
+      "reference_answer": "REPLACE with an answer written from the actual cited text"
+    },
+    {
+      "id": "Q02",
+      "question": "REPLACE with a question whose answer is absent from every paper in this corpus",
+      "answerable": false,
+      "relevant_chunks": [],
+      "reference_answer": "Insufficient evidence in the selected corpus"
+    }
+  ]
+}

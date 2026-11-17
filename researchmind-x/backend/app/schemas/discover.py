@@ -1,10 +1,11 @@
 import re
 from typing import Literal
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
 class DiscoverRequest(BaseModel):
+    model_config = ConfigDict(str_strip_whitespace=True)
     query: str = Field(min_length=3, max_length=300)
     per_page: int = Field(default=10, ge=1, le=25)
     year_from: int | None = Field(default=None, ge=1900, le=2100)

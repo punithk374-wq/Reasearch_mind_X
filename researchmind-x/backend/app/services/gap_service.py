@@ -75,7 +75,7 @@ def detect_gaps(summaries: list[dict]) -> dict:
             )
             data = json.loads(response.text)
             return _clean(data, {s["paper_id"] for s in summaries})
-        except json.JSONDecodeError:
+        except (json.JSONDecodeError, TypeError):
             return {"gaps": [], "note": "The model returned an unreadable response. Please try again."}
         except Exception as exc:
             last_error = exc
@@ -89,10 +89,20 @@ def detect_gaps(summaries: list[dict]) -> dict:
 
 def _clean(data: dict, valid_ids: set[int]) -> dict:
     """Drop malformed gaps and any cited paper id that was not in the request."""
+    if not isinstance(data, dict) or not isinstance(data.get("gaps"), list):
+        return {"gaps": [], "note": "The model returned an invalid gap response. Please try again."}
     cleaned = []
+    allowed_types = {"recurring_limitation", "underrepresented_approach",
+                     "inconsistent_findings", "unaddressed_future_work"}
     for gap in data.get("gaps", []):
-        ids = [i for i in gap.get("supporting_paper_ids", []) if i in valid_ids]
-        if not ids or not gap.get("title") or not gap.get("description"):
+        if not isinstance(gap, dict) or not isinstance(gap.get("type"), str) or gap["type"] not in allowed_types:
+            continue
+        source_ids = gap.get("supporting_paper_ids")
+        if not isinstance(source_ids, list):
+            continue
+        ids = sorted({i for i in source_ids if type(i) is int and i in valid_ids})
+        fields = ("title", "description", "evidence", "research_question")
+        if not ids or any(not isinstance(gap.get(key), str) or not gap[key].strip() for key in fields):
             continue
         cleaned.append(
             {
@@ -104,4 +114,5 @@ def _clean(data: dict, valid_ids: set[int]) -> dict:
                 "research_question": gap.get("research_question", ""),
             }
         )
-    return {"gaps": cleaned, "note": data.get("note")}
+    note = data.get("note")
+    return {"gaps": cleaned, "note": note if isinstance(note, str) else None}

@@ -39,7 +39,7 @@ export default function Gaps() {
 
   const toggle = (id: number) => {
     setSelected((prev) =>
-      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+      prev.includes(id) ? prev.filter((x) => x !== id) : prev.length < 5 ? [...prev, id] : prev
     );
   };
 
@@ -85,6 +85,7 @@ export default function Gaps() {
               <button
                 key={p.id}
                 onClick={() => toggle(p.id)}
+                disabled={loading || (!selected.includes(p.id) && selected.length >= 5)}
                 className={`text-sm px-3 py-2 rounded-lg border text-left max-w-xs truncate ${
                   selected.includes(p.id)
                     ? "bg-emerald-500/20 border-emerald-500 text-emerald-300"
@@ -99,7 +100,7 @@ export default function Gaps() {
 
           <button
             onClick={handleFind}
-            disabled={selected.length < 2 || loading}
+            disabled={selected.length < 2 || selected.length > 5 || loading}
             className="px-5 py-2 rounded bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 text-white font-semibold text-sm"
           >
             {loading

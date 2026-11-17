@@ -1,7 +1,7 @@
 import { useState } from "react";
 import type { FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { isAxiosError } from "axios";
+import { getApiError } from "../api";
 import { useAuth } from "../AuthContext";
 
 export default function Register() {
@@ -21,13 +21,7 @@ export default function Register() {
       await register(fullName, email, password);
       navigate("/");
     } catch (err) {
-      if (isAxiosError(err) && err.response?.status === 400) {
-        setError("That email is already registered");
-      } else if (isAxiosError(err) && err.response?.status === 422) {
-        setError("Check your details: password must be at least 8 characters");
-      } else {
-        setError("Something went wrong. Please try again.");
-      }
+      setError(getApiError(err, "Something went wrong. Please try again."));
     } finally {
       setSubmitting(false);
     }

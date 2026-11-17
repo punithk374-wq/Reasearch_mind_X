@@ -1,0 +1,31 @@
+# Credentials (examples contain placeholders only)
+.env
+.env.*
+!.env.example
+
+# Dependencies and generated runtime data
+venv/
+.venv/
+.venv-*/
+__pycache__/
+*.py[cod]
+node_modules/
+dist/
+dist-ssr/
+uploads/
+chroma_db/
+*.db
+*.sqlite
+*.sqlite3
+*.log
+
+# Local evaluation exports may contain full paper text and account-specific IDs
+**/eval/corpus*.json
+**/eval/results*.json
+**/eval/human_review*.csv
+**/eval/retrieval_set.json
+
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

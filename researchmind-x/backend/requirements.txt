@@ -14,4 +14,5 @@ pymupdf
 sentence-transformers
 chromadb
 google-genai
+langgraph
 requests

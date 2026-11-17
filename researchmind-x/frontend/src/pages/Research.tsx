@@ -52,12 +52,22 @@ function toMarkdown(report: ResearchReport): string {
     lines.push(`**Evidence:** ${g.evidence}`, "");
     lines.push(`**Verification:** ${g.verification_reason}`, "");
     lines.push(`**Candidate research question:** ${g.research_question}`, "");
+    if (g.passages.length) {
+      lines.push("**Retrieved source passages:**", "");
+      g.passages.forEach((p) => {
+        const title = report.papers.find((paper) => paper.paper_id === p.paper_id)?.title ?? `Paper #${p.paper_id}`;
+        lines.push(`- ${title}, page ${p.page_number}${p.section ? `, ${p.section}` : ""}`, "");
+        lines.push(...p.text.split("\n").map((line) => `> ${line}`), "");
+      });
+    }
   });
   if (report.dropped_count > 0) {
     lines.push(
       `_${report.dropped_count} candidate gap(s) were dropped because the papers did not support them._`
     );
   }
+  if (report.note) lines.push("", "## Notes", "", report.note);
+  lines.push("", "## Workflow trace", "", ...report.trace.map((step) => `- ${step}`));
   return lines.join("\n");
 }
 
@@ -171,7 +181,7 @@ export default function Research() {
 
   const toggle = (id: number) => {
     setSelected((prev) =>
-      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+      prev.includes(id) ? prev.filter((x) => x !== id) : prev.length < 5 ? [...prev, id] : prev
     );
   };
 
@@ -227,6 +237,7 @@ export default function Research() {
               <button
                 key={p.id}
                 onClick={() => toggle(p.id)}
+                disabled={loading || (!selected.includes(p.id) && selected.length >= 5)}
                 className={`text-sm px-3 py-2 rounded-lg border text-left max-w-xs truncate ${
                   selected.includes(p.id)
                     ? "bg-emerald-500/20 border-emerald-500 text-emerald-300"
@@ -241,7 +252,7 @@ export default function Research() {
 
           <button
             onClick={handleRun}
-            disabled={selected.length < 2 || loading}
+            disabled={selected.length < 2 || selected.length > 5 || loading}
             className="px-5 py-2 rounded bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 text-white font-semibold text-sm"
           >
             {loading
@@ -252,7 +263,7 @@ export default function Research() {
           {loading && (
             <p className="text-amber-400 text-sm mt-3">
               Extract summaries, detect gaps, verify evidence, build report. This
-              can take up to a minute.
+              may take several minutes when the AI service is busy.
             </p>
           )}
 

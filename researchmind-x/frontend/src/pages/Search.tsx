@@ -1,6 +1,6 @@
 import { useState } from "react";
 import type { FormEvent } from "react";
-import api from "../api";
+import api, { getApiError } from "../api";
 import type { SearchHit } from "../api";
 import NavBar from "../components/NavBar";
 
@@ -24,8 +24,8 @@ export default function Search() {
       });
       setResults(res.data);
       setSearched(true);
-    } catch {
-      setError("Search failed. Please try again.");
+    } catch (err) {
+      setError(getApiError(err, "Search failed. Please try again."));
     } finally {
       setLoading(false);
     }
@@ -88,7 +88,7 @@ export default function Search() {
                         {hit.section ? ` · ${hit.section}` : ""}
                       </span>
                       <span className="text-xs text-slate-500">
-                        match {(hit.score * 100).toFixed(0)}%
+                        similarity {hit.score.toFixed(3)}
                       </span>
                     </div>
                     <p className="text-sm text-slate-300">{hit.text}</p>

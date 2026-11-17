@@ -1,9 +1,10 @@
 from pydantic_settings import BaseSettings
+from pydantic import Field
 
 
 class Settings(BaseSettings):
     database_url: str
-    secret_key: str
+    secret_key: str = Field(min_length=32)
     algorithm: str = "HS256"
     access_token_expire_minutes: int = 1440
     gemini_api_key: str

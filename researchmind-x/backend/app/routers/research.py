@@ -34,6 +34,8 @@ def run_research(
     missing = set(data.paper_ids) - {p.id for p in papers}
     if missing:
         raise HTTPException(status_code=404, detail=f"Papers not found: {sorted(missing)}")
+    if any(p.status != "ready" for p in papers):
+        raise HTTPException(status_code=409, detail="All selected papers must finish processing successfully")
 
     titles = {p.id: p.title for p in papers}
     return run_workflow(data.paper_ids, titles, user.id)

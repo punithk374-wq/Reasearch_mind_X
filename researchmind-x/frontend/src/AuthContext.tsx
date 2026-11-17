@@ -16,20 +16,25 @@ const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(() => Boolean(localStorage.getItem("token")));
 
   // On first load, if a token is saved, ask the backend who we are
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (!token) {
-      setLoading(false);
       return;
     }
+    let active = true;
+    const controller = new AbortController();
     api
-      .get<User>("/api/auth/me")
-      .then((res) => setUser(res.data))
-      .catch(() => localStorage.removeItem("token"))
-      .finally(() => setLoading(false));
+      .get<User>("/api/auth/me", { signal: controller.signal })
+      .then((res) => { if (active) setUser(res.data); })
+      .catch(() => { if (active) localStorage.removeItem("token"); })
+      .finally(() => { if (active) setLoading(false); });
+    return () => {
+      active = false;
+      controller.abort();
+    };
   }, []);
 
   const login = async (email: string, password: string) => {

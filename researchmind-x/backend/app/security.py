@@ -18,7 +18,13 @@ def hash_password(password: str) -> str:
 
 
 def verify_password(password: str, hashed: str) -> bool:
-    return bcrypt.checkpw(password.encode("utf-8"), hashed.encode("utf-8"))
+    encoded = password.encode("utf-8")
+    if len(encoded) > 72:
+        return False
+    try:
+        return bcrypt.checkpw(encoded, hashed.encode("utf-8"))
+    except ValueError:
+        return False
 
 
 def create_access_token(user_id: int) -> str:
@@ -44,10 +50,13 @@ def get_current_user(
         user_id = payload.get("sub")
         if user_id is None:
             raise credentials_error
-    except JWTError:
+        user_id = int(user_id)
+        if not 1 <= user_id <= 2_147_483_647:
+            raise credentials_error
+    except (JWTError, ValueError, TypeError):
         raise credentials_error
 
-    user = db.get(User, int(user_id))
+    user = db.get(User, user_id)
     if user is None:
         raise credentials_error
     return user

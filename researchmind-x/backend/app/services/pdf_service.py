@@ -19,7 +19,7 @@ CANONICAL_SECTIONS = [
     ("introduction", r"introduction"),
     ("literature review", r"related work|literature (survey|review)|background"),
     ("methodology", r"methodology|methods?|proposed (system|method|approach)|materials and methods"),
-        ("dataset", r"datasets?"),
+    ("dataset", r"datasets?"),
     ("experiments", r"experiments?|experimental (setup|results)"),
     ("results", r"results|results and discussion|findings|evaluation"),
     ("discussion", r"discussion"),
@@ -105,7 +105,9 @@ def _find_cut(text: str, limit: int) -> int:
 
 
 def build_chunks(pages, max_chars: int = 1000, overlap: int = 150):
-    """Section-aware chunking: a chunk never crosses a section heading."""
+    """Keep each chunk inside one page and section so its citation is accurate."""
+    if max_chars < 40 or not 0 <= overlap < max_chars:
+        raise ValueError("max_chars must be at least 40 and 0 <= overlap < max_chars")
     chunks: list[ChunkData] = []
     section: str | None = None
     buffer = ""
@@ -118,6 +120,10 @@ def build_chunks(pages, max_chars: int = 1000, overlap: int = 150):
             chunks.append(ChunkData(len(chunks), page, sec, text))
 
     for page_number, lines in pages:
+        # A single page_number cannot describe evidence spanning multiple pages.
+        if has_new:
+            emit(buffer, buffer_page, section)
+        buffer, has_new = "", False
         for line in lines:
             heading = detect_heading(line)
             if heading:
@@ -136,7 +142,7 @@ def build_chunks(pages, max_chars: int = 1000, overlap: int = 150):
                 cut = _find_cut(buffer, max_chars)
                 emit(buffer[:cut], buffer_page, section)
                 has_new = bool(buffer[cut:].strip())
-                buffer = buffer[cut - overlap:].strip()
+                buffer = buffer[max(1, cut - overlap):].strip()
                 buffer_page = page_number
 
     if has_new:
@@ -153,6 +159,8 @@ def process_pdf(path: str) -> dict:
 
     pages = remove_boilerplate(pages)
     chunks = build_chunks(pages)
+    if not chunks:
+        raise ValueError("No usable text chunks remained after PDF preprocessing.")
     return {
         "page_count": page_count,
         "title": (meta_title or "").strip() or None,

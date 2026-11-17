@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 
 from app.models.paper import Paper, PaperChunk
 from app.services.pdf_service import process_pdf
-from app.services.vector_store import index_chunks
+from app.services.vector_store import delete_paper_vectors, index_chunks
 
 
 def ingest_pdf(
@@ -69,6 +69,12 @@ def ingest_pdf(
         paper = db.get(Paper, paper_id)
         paper.status = "failed"
         paper.error_message = str(exc)[:500]
+        # A partially completed vector write must not leave searchable chunks for
+        # SQL rows that were rolled back.
+        try:
+            delete_paper_vectors(paper_id)
+        except Exception:
+            paper.error_message = (paper.error_message + " Vector cleanup also failed; remove this paper before retrying.")[:500]
 
     db.commit()
     db.refresh(paper)

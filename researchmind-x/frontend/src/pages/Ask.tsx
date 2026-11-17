@@ -1,6 +1,6 @@
 import { useState } from "react";
 import type { FormEvent } from "react";
-import api from "../api";
+import api, { getApiError } from "../api";
 import type { AskResponse, SearchHit } from "../api";
 import NavBar from "../components/NavBar";
 
@@ -11,7 +11,7 @@ interface Turn {
 }
 
 // Splits "...claim [1][2] more text [3]." into plain text and citation markers
-function renderAnswer(text: string) {
+function renderAnswer(text: string, turnIndex: number) {
   const parts = text.split(/(\[\d+\])/g);
   return parts.map((part, i) => {
     const match = part.match(/^\[(\d+)\]$/);
@@ -22,7 +22,9 @@ function renderAnswer(text: string) {
           className="text-emerald-400 font-semibold ml-0.5"
           title={`Source ${match[1]}`}
         >
-          [{match[1]}]
+          <a href={`#answer-${turnIndex}-source-${match[1]}`} className="underline">
+            [{match[1]}]
+          </a>
         </sup>
       );
     }
@@ -53,8 +55,8 @@ export default function Ask() {
         ...prev,
         { question: q, answer: res.data.answer, sources: res.data.sources },
       ]);
-    } catch {
-      setError("Something went wrong answering that question.");
+    } catch (err) {
+      setError(getApiError(err, "Something went wrong answering that question."));
       setQuestion(q);
     } finally {
       setLoading(false);
@@ -114,7 +116,7 @@ export default function Ask() {
               <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-xl p-4">
                 <p className="text-xs text-emerald-400 mb-2">Answer</p>
                 <p className="text-sm leading-relaxed">
-                  {renderAnswer(turn.answer)}
+                  {renderAnswer(turn.answer, i)}
                 </p>
               </div>
 
@@ -123,12 +125,12 @@ export default function Ask() {
                   <p className="text-xs text-slate-500 mb-2">Sources</p>
                   <div className="space-y-2">
                     {turn.sources.map((s, idx) => (
-                      <div key={s.chunk_id} className="bg-slate-800 rounded p-3">
+                      <div key={s.chunk_id} id={`answer-${i}-source-${idx + 1}`} tabIndex={-1} className="bg-slate-800 rounded p-3 scroll-mt-4">
                         <p className="text-xs text-emerald-400 mb-1">
                           [{idx + 1}] paper #{s.paper_id} · page{" "}
                           {s.page_number}
-                          {s.section ? ` · ${s.section}` : ""} · match{" "}
-                          {(s.score * 100).toFixed(0)}%
+                          {s.section ? ` · ${s.section}` : ""} · similarity{" "}
+                          {s.score.toFixed(3)}
                         </p>
                         <p className="text-xs text-slate-400">{s.text}</p>
                       </div>
