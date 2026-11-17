@@ -14,14 +14,17 @@ each paper. Work ONLY from these summaries. Rules:
    - "underrepresented_approach": a method, dataset, population or setting is missing or
      rarely covered across the papers
    - "inconsistent_findings": papers report conflicting or hard-to-reconcile results
-   - "unaddressed_future_work": a paper's stated future work that none of the other
-     papers appear to address
+   - "unaddressed_future_work": a paper's explicitly stated future research direction;
+     this category does NOT establish that other papers leave it unaddressed
 2. Every gap MUST list the paper_ids that support it, in "supporting_paper_ids", and a
    short "evidence" string quoting or closely paraphrasing what those papers say.
 3. Do NOT invent facts. If the summaries do not support a gap, do not include it. It is
    better to return fewer gaps than to speculate. If the papers are too unrelated to
    compare meaningfully, return an empty gaps list and explain in "note".
 4. These are CANDIDATE gaps for human review. Never claim a gap is proven or novel.
+   Missing information in a summary is not evidence of absence in a paper. Do not
+   say other papers fail to address a topic based on summary omissions. Attribute
+   future-work claims to the source paper without adding unsupported comparisons.
 5. For each gap, propose one concrete "research_question" a researcher could investigate.
 6. Respond with ONLY a JSON object, no markdown fences, in exactly this shape:
 

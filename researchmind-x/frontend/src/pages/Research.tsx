@@ -18,14 +18,14 @@ const TYPE_LABELS: Record<string, { label: string; style: string }> = {
     style: "bg-red-500/15 text-red-400",
   },
   unaddressed_future_work: {
-    label: "Unaddressed future work",
+    label: "Source-stated future work",
     style: "bg-violet-500/15 text-violet-400",
   },
 };
 
 const STATUS_STYLES: Record<string, string> = {
-  verified: "bg-emerald-500/15 text-emerald-400",
-  "partially verified": "bg-amber-500/15 text-amber-400",
+  "source-supported": "bg-emerald-500/15 text-emerald-400",
+  "partially supported": "bg-amber-500/15 text-amber-400",
   unverified: "bg-slate-600/40 text-slate-300",
 };
 
@@ -41,11 +41,11 @@ function toMarkdown(report: ResearchReport): string {
   );
   report.gaps.forEach((g, i) => {
     lines.push(`### ${i + 1}. ${g.title}`, "");
-    lines.push(`- **Type:** ${g.type.replace(/_/g, " ")}`);
+    lines.push(`- **Type:** ${TYPE_LABELS[g.type]?.label ?? g.type.replace(/_/g, " ")}`);
     lines.push(`- **Status:** ${g.status}`);
     lines.push(`- **Cited papers:** ${g.supporting_paper_ids.join(", ")}`);
     lines.push(
-      `- **Verified by papers:** ${g.verified_paper_ids.join(", ") || "none"}`,
+      `- **Checker-listed supporting papers:** ${g.verified_paper_ids.join(", ") || "none"}`,
       ""
     );
     lines.push(g.description, "");
@@ -99,7 +99,7 @@ function GapCard({
       </div>
 
       <p className="text-xs text-slate-500">
-        Supported by {gap.verified_paper_ids.length} of{" "}
+        Model-assessed source support; novelty not established. Support listed from {gap.verified_paper_ids.length} of{" "}
         {gap.supporting_paper_ids.length} cited paper
         {gap.supporting_paper_ids.length === 1 ? "" : "s"}
       </p>

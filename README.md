@@ -71,6 +71,11 @@ accuracy, latency or human scores are included in this repository.
 - A fully supported gap needs checker-reported support and retrieved passages for
   every cited paper. Malformed or inconsistent checker output is handled conservatively.
 - All gaps remain candidates for human review; they are not proof of novelty.
+  The checker must report coverage of all assertions, including comparisons.
+  Missing coverage is unverified; unestablished assertions prevent full support.
+  Source support remains model-assessed, not an independent human certification.
+  Reports retain full retrieved chunks, and the UI labels stated future work
+  without claiming it is unaddressed across the literature.
 - New PDF uploads use chunks confined to one page and section. Existing stored chunks
   are unchanged: re-upload PDFs into a separate evaluation account to use the new
   chunker without deleting your current library. The existing `reindex` endpoint only

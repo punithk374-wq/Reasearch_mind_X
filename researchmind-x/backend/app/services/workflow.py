@@ -54,8 +54,8 @@ def verify_evidence(state: WorkflowState) -> dict:
 
 
 STATUS_LABELS = {
-    "supported": "verified",
-    "partial": "partially verified",
+    "supported": "source-supported",
+    "partial": "partially supported",
     "unverified": "unverified",
 }
 
@@ -70,9 +70,7 @@ def triage(state: WorkflowState) -> dict:
             "status": STATUS_LABELS.get(ver["verdict"], "unsupported"),
             "verified_paper_ids": ver["supported_paper_ids"],
             "verification_reason": ver["reason"],
-            "passages": [
-                {**p, "text": p["text"][:500]} for p in ver["passages"]
-            ],
+            "passages": ver["passages"],
         }
         (dropped if ver["verdict"] == "unsupported" else kept).append(item)
     return {

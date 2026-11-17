@@ -18,7 +18,7 @@ const TYPE_LABELS: Record<string, { label: string; style: string }> = {
     style: "bg-red-500/15 text-red-400",
   },
   unaddressed_future_work: {
-    label: "Unaddressed future work",
+    label: "Source-stated future work",
     style: "bg-violet-500/15 text-violet-400",
   },
 };

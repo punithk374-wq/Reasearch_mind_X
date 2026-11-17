@@ -12,12 +12,21 @@ For EACH gap:
 1. A paper supports a claim only when its passages explicitly state or clearly show it.
    Not mentioning a topic is not evidence of a research gap or proof of novelty.
 2. Judge each cited paper separately. List only supporting ids with retrieved passages.
-3. Use 'supported' if every cited paper supports the claim, 'partial' if only some do,
-   and 'unsupported' if none do. Do not use outside knowledge.
+3. Check EVERY factual assertion in the title, description and claimed evidence,
+   including comparisons and claims that another paper does not cover a topic.
+   A supporting future-work sentence does not support an added absence claim.
+   Retrieved excerpts cannot establish that a topic is absent from a whole paper
+   or the wider literature. List such unestablished assertions in unsupported_claims.
+   Set all_claims_supported=true ONLY when every assertion is supported.
+   Use supported only when every assertion AND every cited paper are supported;
+   partial when some claims or cited papers are supported; unsupported when none
+   are supported. Missing evidence is not proof that a claim is false.
+   Do not use outside knowledge.
 4. Explain the evidence in one or two plain sentences.
 5. Return JSON only, exactly one result per gap:
 {"results": [{"index": 0, "verdict": "supported | partial | unsupported",
-              "supported_paper_ids": [1], "reason": "..."}]}
+              "supported_paper_ids": [1], "all_claims_supported": true,
+              "unsupported_claims": [], "reason": "..."}]}
 """
 
 
@@ -33,10 +42,6 @@ def _gather_passages(gap: dict, user_id: int) -> list[dict]:
                 "section": hit["section"], "text": hit["text"],
             })
     return passages
-
-
-def _trim(text: str, limit: int = 900) -> str:
-    return text if len(text) <= limit else text[:limit].rstrip() + "…"
 
 
 def _normalise_result(item: object, gap: dict, passages: list[dict]) -> dict:
@@ -69,6 +74,16 @@ def _normalise_result(item: object, gap: dict, passages: list[dict]) -> dict:
         return {**result, "verdict": "unsupported", "reason": reason.strip()}
     if not supported:
         return result
+    coverage = item.get("all_claims_supported")
+    unchecked = item.get("unsupported_claims")
+    if type(coverage) is not bool or not isinstance(unchecked, list):
+        return {**result, "reason": "The checker did not provide a complete claim-coverage assessment."}
+    if any(not isinstance(claim, str) or not claim.strip() for claim in unchecked):
+        return result
+    if not coverage or unchecked:
+        verdict = "partial"
+        details = "; ".join(claim.strip() for claim in unchecked) or "Not every assertion was established."
+        reason = reason.strip() + " Unsupported or unestablished assertions: " + details
     if verdict == "supported" and set(supported) != cited:
         verdict = "partial"
         reason = (f"The checker listed support from {len(supported)} of {len(cited)} "
@@ -92,7 +107,7 @@ def verify_gaps_batch(gaps: list[dict], user_id: int) -> list[dict]:
             where = f"page {passage['page_number']}"
             if passage["section"]:
                 where += f", {passage['section']}"
-            lines.append(f"[Paper {passage['paper_id']}, {where}]\n{_trim(passage['text'])}")
+            lines.append(f"[Paper {passage['paper_id']}, {where}]\n{passage['text']}")
         blocks.append(
             f"=== Gap {index} ===\nTitle: {gap['title']}\n"
             f"Description: {gap['description']}\nClaimed evidence: {gap['evidence']}\n"

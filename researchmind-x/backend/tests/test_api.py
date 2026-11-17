@@ -197,6 +197,8 @@ class ApiIntegrationTests(unittest.TestCase):
                "supporting_paper_ids": ids, "evidence": "Fixture evidence", "research_question": "Fixture question?"}
         verifications = [{"verdict": verdict, "supported_paper_ids": ids if verdict == "supported" else [],
                           "reason": "Fixture verdict", "passages": []} for verdict in ("supported", "unsupported")]
+        evidence_text = "Supporting passage. " * 80
+        verifications[0]["passages"] = [{"paper_id": ids[0], "page_number": 1, "section": None, "text": evidence_text}]
         with patch.object(workflow, "get_paper_summary", return_value=summary), \
              patch.object(workflow, "detect_gaps", return_value={"gaps": [gap, gap], "note": None}) as detect, \
              patch.object(workflow, "verify_gaps_batch", return_value=verifications) as verify:
@@ -204,6 +206,8 @@ class ApiIntegrationTests(unittest.TestCase):
             self.assertEqual(response.status_code, 200, response.text)
             self.assertEqual(len(response.json()["gaps"]), 1)
             self.assertEqual(response.json()["dropped_count"], 1)
+            self.assertEqual(response.json()["gaps"][0]["status"], "source-supported")
+            self.assertEqual(response.json()["gaps"][0]["passages"][0]["text"], evidence_text)
             detect.return_value = {"gaps": [], "note": "Fixture: unrelated papers"}
             verify.reset_mock()
             empty = self.client.post("/api/research/run", json={"paper_ids": ids}, headers=self.headers)

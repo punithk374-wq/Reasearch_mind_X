@@ -35,10 +35,29 @@ def load_verifier(response, available=(11, 12)):
 
 def result(verdict="supported", ids=None):
     return {"index": 0, "verdict": verdict, "supported_paper_ids": [11, 12] if ids is None else ids,
-            "reason": "Model explanation."}
+            "all_claims_supported": True, "unsupported_claims": [], "reason": "Model explanation."}
 
 
 class VerificationTests(unittest.TestCase):
+    def test_supported_source_does_not_validate_unsupported_comparison(self):
+        item = result() | {"all_claims_supported": False,
+                           "unsupported_claims": ["Other papers do not address this topic."]}
+        checked = self.check({"results": [item]})
+        self.assertEqual(checked["verdict"], "partial")
+        self.assertIn("Other papers do not address", checked["reason"])
+
+    def test_contradictory_coverage_cannot_be_fully_supported(self):
+        item = result() | {"all_claims_supported": True, "unsupported_claims": ["Absence not established"]}
+        self.assertEqual(self.check({"results": [item]})["verdict"], "partial")
+
+    def test_missing_or_malformed_coverage_is_unverified(self):
+        for coverage in (None, "true", 1):
+            item = result() | {"all_claims_supported": coverage}
+            self.assertEqual(self.check({"results": [item]})["verdict"], "unverified")
+        item = result()
+        del item["unsupported_claims"]
+        self.assertEqual(self.check({"results": [item]})["verdict"], "unverified")
+
     def check(self, response, available=(11, 12)):
         module, _ = load_verifier(response, available)
         return module.verify_gaps_batch([GAP], user_id=7)[0]
