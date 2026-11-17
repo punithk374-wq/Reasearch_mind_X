@@ -169,7 +169,8 @@ def main():
     report.update({"schema_version": 1, "evaluated_at": datetime.now(timezone.utc).isoformat(),
                    "user_id": user["id"], "dataset_sha256": hashlib.sha256(dataset_bytes).hexdigest(),
                    "paper_fingerprints": dataset["paper_fingerprints"],
-                   "label_method": "Manual relevance labels; no keyword proxy or automatic LLM relevance grading"})
+                   "label_method": dataset.get("annotation_status", "User-provided relevance labels; review status not recorded"),
+                   "label_note": "Labels are supplied by the dataset, not independently verified by this script."})
     output = args.output or Path("eval") / ("results_retrieval_" + datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%fZ") + ".json")
     if output.exists():
         parser.exit(1, f"{output} already exists. Choose a new output path.\n")

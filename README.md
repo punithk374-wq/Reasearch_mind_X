@@ -75,7 +75,13 @@ accuracy, latency or human scores are included in this repository.
   are unchanged: re-upload PDFs into a separate evaluation account to use the new
   chunker without deleting your current library. The existing `reindex` endpoint only
   rebuilds embeddings from stored chunks; it does not re-extract PDFs.
+- Retrieval combines semantic candidates with BM25 keyword candidates using
+  reciprocal-rank fusion. Both candidate lists are restricted to the signed-in
+  user and optional selected paper before scoring. Existing chunks need no reindex.
+  The lexical pass reads the scoped corpus per request; this is intended for local
+  academic libraries, not yet optimized for very large collections.
 - Cosine similarity is displayed as a score, not as an accuracy percentage.
+  Results are ordered by hybrid relevance, so cosine scores need not descend.
 - Scanned PDFs still need OCR outside this application. OCR and cloud deployment are
   optional future work, not completed features.
 - API quotas and external service availability can affect live demonstrations.

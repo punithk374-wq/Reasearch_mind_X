@@ -93,3 +93,17 @@ caches may affect latency; the script does not claim to measure cold-cache timin
 
 Keep the raw outputs and report failed or empty runs honestly. No real project
 results can be inferred from the automated regression fixtures in `tests/`.
+# Retrieval update: comparing runs
+
+The retriever now combines semantic and BM25 keyword candidates. Run the same
+dataset against the same ready-paper corpus before comparing retrieval metrics.
+Keep the original result JSON. This change does not establish improved accuracy
+until the real installed application has been evaluated again.
+
+`annotation_status` in a dataset is copied to the result's `label_method` field.
+Record the actual review performed (for example, AI-assisted draft reviewed by
+the project author). Reviewing displayed passages does not establish that every
+relevant chunk was labelled. Correct missing labels with a documented revision
+and rescore BOTH runs against the same revised labels. Never count a labelling
+correction as a retrieval improvement. Use an independent held-out set for final
+claims; the starter set used during development is not held out.
