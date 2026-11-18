@@ -46,6 +46,13 @@ class VerificationTests(unittest.TestCase):
         self.assertEqual(checked["verdict"], "partial")
         self.assertIn("Other papers do not address", checked["reason"])
 
+    def test_incomplete_evidence_explanations_are_limited_to_passages(self):
+        for verdict, ids in (("partial", [11]), ("unsupported", [])):
+            item = result(verdict, ids) | {"reason": "The whole paper omits this topic."}
+            checked = self.check({"results": [item]})
+            self.assertIn("retrieved passages", checked["reason"])
+            self.assertNotIn("whole paper", checked["reason"])
+
     def test_contradictory_coverage_cannot_be_fully_supported(self):
         item = result() | {"all_claims_supported": True, "unsupported_claims": ["Absence not established"]}
         self.assertEqual(self.check({"results": [item]})["verdict"], "partial")

@@ -22,7 +22,8 @@ For EACH gap:
    partial when some claims or cited papers are supported; unsupported when none
    are supported. Missing evidence is not proof that a claim is false.
    Do not use outside knowledge.
-4. Explain the evidence in one or two plain sentences.
+4. Describe only what the retrieved passages establish. In unsupported_claims,
+   identify the candidate assertions that still need evidence.
 5. Return JSON only, exactly one result per gap:
 {"results": [{"index": 0, "verdict": "supported | partial | unsupported",
               "supported_paper_ids": [1], "all_claims_supported": true,
@@ -71,7 +72,7 @@ def _normalise_result(item: object, gap: dict, passages: list[dict]) -> dict:
     if verdict == "unsupported":
         if ids:
             return result
-        return {**result, "verdict": "unsupported", "reason": reason.strip()}
+        return {**result, "verdict": "unsupported", "reason": "The retrieved passages did not establish the candidate claim."}
     if not supported:
         return result
     coverage = item.get("all_claims_supported")
@@ -83,7 +84,9 @@ def _normalise_result(item: object, gap: dict, passages: list[dict]) -> dict:
     if not coverage or unchecked:
         verdict = "partial"
         details = "; ".join(claim.strip() for claim in unchecked) or "Not every assertion was established."
-        reason = reason.strip() + " Unsupported or unestablished assertions: " + details
+        reason = "The retrieved passages provided partial support. Claims still needing evidence: " + details
+    elif verdict == "partial":
+        reason = "The retrieved passages provided partial support for the candidate."
     if verdict == "supported" and set(supported) != cited:
         verdict = "partial"
         reason = (f"The checker listed support from {len(supported)} of {len(cited)} "
